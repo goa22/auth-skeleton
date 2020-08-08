@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+	<body>
+
+		<h2>Login template: Welcome to {{.PageName}}</h2>
+		<center>
+			<form action="/signup" method="POST">
+
+				<label for="user-id">Username:</label><br>
+				<input type="text" id="user-id" name="user"><br>
+
+				<label for="email-id">Email:</label><br>
+				<input type="email" id="email-id" name="email"><br>
+
+				<label for="password-id">Password:</label><br>
+				<input type="password" id="password-id" name="password"><br><br>
+
+				<input type="submit" value="Sign Up">
+			</form> 
+
+			{{range .ArrayErr}}
+			<br>{{.}}</br>
+			{{end}}
+		</center>
+	</body>
+</html>
+
+

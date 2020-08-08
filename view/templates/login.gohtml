@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+	<body>
+		<h2>Login template: Welcome to {{.PageName}}</h2>
+		<center>
+			<form action="/login" method="POST">
+				<label for="user-id">Username:</label><br>
+				<input type="text" id="user-id" name="user"><br>
+				<label for="password-id">Password:</label><br>
+				<input type="password" id="password-id" name="password"><br><br>
+				<input type="submit" value="Log In">
+			</form> 
+
+			<br>{{.Err}}</br> 
+		</center>
+	</body>
+</html>
+
