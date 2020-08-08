@@ -98,7 +98,7 @@ func (lc LoginController) HomepageHandler(w http.ResponseWriter, req *http.Reque
 func (lc LoginController) SignupHandler(w http.ResponseWriter, req *http.Request) {
 	signupTplView := view.SignupView{PageName: "Signup", ArrayErr: nil}
 
-	if _, ok := lc.checkCookie(w, req); ok {
+	if _, ok := lc.CheckCookie(w, req); ok {
 		http.Redirect(w, req, "/u/", http.StatusSeeOther)
 		return
 	} else {
@@ -117,7 +117,6 @@ func (lc LoginController) SignupHandler(w http.ResponseWriter, req *http.Request
 				}
 			} else {
 				signupTplView.ArrayErr = arrayErr
-				// http.Error(w, "Username and/or password do not match", http.StatusForbidden)
 			}
 
 		}
@@ -134,7 +133,7 @@ func (lc LoginController) SignupHandler(w http.ResponseWriter, req *http.Request
 func (lc LoginController) LoginHandler(w http.ResponseWriter, req *http.Request) {
 	loginTplView := view.LoginView{PageName: "LoginHandler", Err: nil}
 
-	if _, ok := lc.checkCookie(w, req); ok {
+	if _, ok := lc.CheckCookie(w, req); ok {
 		http.Redirect(w, req, "/u/", http.StatusSeeOther)
 		return
 	} else {
@@ -167,7 +166,7 @@ func (lc LoginController) LoginHandler(w http.ResponseWriter, req *http.Request)
 
 func (lc LoginController) LogoutHandler(w http.ResponseWriter, req *http.Request) {
 	// Delete cookie by putting max age to negative
-	if _, ok := lc.checkCookie(w, req); ok {
+	if _, ok := lc.CheckCookie(w, req); ok {
 		c, err := req.Cookie(COOKIE_ACCES_PATH)
 		if err != nil {
 
@@ -185,7 +184,7 @@ func (lc LoginController) LogoutHandler(w http.ResponseWriter, req *http.Request
 }
 
 func (lc LoginController) UserHandler(w http.ResponseWriter, req *http.Request) {
-	if user, ok := lc.checkCookie(w, req); ok {
+	if user, ok := lc.CheckCookie(w, req); ok {
 		err := lc.tpl.ExecuteTemplate(w, "user.gohtml", user)
 		if err != nil {
 			// Redirect UserHandler to error page
@@ -199,18 +198,23 @@ func (lc LoginController) UserHandler(w http.ResponseWriter, req *http.Request) 
 
 }
 
-func (lc LoginController) ProjectHandler(w http.ResponseWriter, req *http.Request) {
-	if user, ok := lc.checkCookie(w, req); ok {
-		err := lc.tpl.ExecuteTemplate(w, "project.gohtml", user)
-		if err != nil {
-			// Redirect UserHandler to error page
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			fmt.Fprintf(os.Stderr, "main.go: ProjectHandler: %s", err)
-		}
+// CheckCookie ensure that the cookie session is correct
+func (lc LoginController) CheckCookie(w http.ResponseWriter, req *http.Request) (string, bool) {
+	c, err := req.Cookie(COOKIE_ACCES_PATH)
+	if err != nil {
+		return "", false
 	} else {
-		http.Redirect(w, req, "/login", http.StatusSeeOther)
-		return
+		ctx, cancel := context.WithTimeout(context.Background(), CONTEXT_TIME_DB*time.Second)
+		defer cancel()
+
+		session := model.UserSession{}
+		err = lc.collectionSession.FindOne(ctx, bson.M{"uuid": c.Value, "username": bson.M{"$exists": true}}).Decode(&session)
+		if err == nil {
+			return session.Username, true
+		}
 	}
+
+	return "", false
 }
 
 //
@@ -270,25 +274,6 @@ func (lc LoginController) checkCredentials(username string, password string) (bo
 	}
 
 	return false, err
-}
-
-// checkCookie ensure that the cookie session is correct
-func (lc LoginController) checkCookie(w http.ResponseWriter, req *http.Request) (string, bool) {
-	c, err := req.Cookie(COOKIE_ACCES_PATH)
-	if err != nil {
-		return "", false
-	} else {
-		ctx, cancel := context.WithTimeout(context.Background(), CONTEXT_TIME_DB*time.Second)
-		defer cancel()
-
-		session := model.UserSession{}
-		err = lc.collectionSession.FindOne(ctx, bson.M{"uuid": c.Value, "username": bson.M{"$exists": true}}).Decode(&session)
-		if err == nil {
-			return session.Username, true
-		}
-	}
-
-	return "", false
 }
 
 func (lc LoginController) deleteCookieSession(w http.ResponseWriter, req *http.Request, c *http.Cookie) error {

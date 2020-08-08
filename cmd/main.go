@@ -15,9 +15,14 @@ const (
 	DATABASE_NAME  = "mongo-login"
 )
 
+var lc *controller.LoginController
+
+func init() {
+	lc = controller.NewLoginController(DATABASE_NAME, TEMPLATES_PATH)
+}
+
 func main() {
 	go cleanSessionLogsTimer()
-	lc := controller.NewLoginController(DATABASE_NAME, TEMPLATES_PATH)
 
 	fmt.Println("Check localhost:8080")
 
@@ -25,13 +30,32 @@ func main() {
 	http.HandleFunc("/signup", lc.SignupHandler)
 	http.HandleFunc("/login", lc.LoginHandler)
 	http.HandleFunc("/logout", lc.LogoutHandler)
-
 	http.HandleFunc("/u/", lc.UserHandler)
-	http.HandleFunc("/p/", lc.ProjectHandler)
 
-	// try page?
+	http.HandleFunc("/p/", ProjectHandler)
+	http.HandleFunc("/help", HelpHandler)
 
 	http.ListenAndServe(":8080", nil)
+}
+
+// Handler with authentication
+func ProjectHandler(w http.ResponseWriter, req *http.Request) {
+	if username, ok := lc.CheckCookie(w, req); ok {
+		//
+		//
+		// PUT SOME CODE
+		//
+		//
+		fmt.Fprintf(w, "Welcome %v", username)
+	} else {
+		http.Redirect(w, req, "/login", http.StatusSeeOther)
+		return
+	}
+}
+
+// Handler without authentication
+func HelpHandler(w http.ResponseWriter, req *http.Request) {
+	fmt.Fprintf(w, "Welcome unknown user")
 }
 
 func cleanSessionLogsTimer() {

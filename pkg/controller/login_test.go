@@ -49,7 +49,7 @@ func setup(lc *LoginController) {
 	}
 
 	sessions := []model.UserSession{
-		// Unit testing checkCookie
+		// Unit testing CheckCookie
 		{"e820a5a3-5c95-4516-961d-2603103643e1", "username12345", time.Now(), time.Now()},
 		{},
 	}
@@ -196,7 +196,7 @@ func TestCheckCookie(t *testing.T) {
 			rec := httptest.NewRecorder()
 
 			// Check cookie
-			username, ok := lc.checkCookie(rec, req)
+			username, ok := lc.CheckCookie(rec, req)
 			if ok != tc.pass {
 				t.Errorf("error checking cookie, expected %v; got %v", tc.pass, ok)
 			}
