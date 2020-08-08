@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/auth-skeleton/controller"
+	"github.com/auth-skeleton/pkg/controller"
 	"net/http"
 	"time"
 )
@@ -11,7 +11,7 @@ const (
 	TIMER_CHECK_SESSION_INACTIVITY = 86400  // 1 day
 	MAX_TIME_SESSION_INACTIVITY    = 864000 // 10 day
 
-	TEMPLATES_PATH = "./view/templates/*.gohtml"
+	TEMPLATES_PATH = "../pkg/view/templates/*.gohtml"
 	DATABASE_NAME  = "mongo-login"
 )
 
