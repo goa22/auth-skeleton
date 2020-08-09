@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"github.com/auth-skeleton/pkg/controller"
 	"net/http"
+	"os"
 	"time"
 )
 
 const (
-	TIMER_CHECK_SESSION_INACTIVITY = 86400  // 1 day
-	MAX_TIME_SESSION_INACTIVITY    = 864000 // 10 day
+	TIMER_CHECK_SESSION_INACTIVITY = 86400 // 1 day
 
 	TEMPLATES_PATH = "../pkg/view/templates/*.gohtml"
 	DATABASE_NAME  = "mongo-login"
@@ -60,7 +60,11 @@ func HelpHandler(w http.ResponseWriter, req *http.Request) {
 
 func cleanSessionLogsTimer() {
 	for {
+		_, err := lc.CleanSessionLogs()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error CleanSessionLogs: %v", err)
+		}
+
 		time.Sleep(TIMER_CHECK_SESSION_INACTIVITY * time.Second)
-		// cleanSessionLogs()
 	}
 }

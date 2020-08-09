@@ -51,7 +51,10 @@ func setup(lc *LoginController) {
 	sessions := []model.UserSession{
 		// Unit testing CheckCookie
 		{"e820a5a3-5c95-4516-961d-2603103643e1", "username12345", time.Now(), time.Now()},
-		{},
+		// Unit testing CleanSessionLogs
+		{"d9cf88f0-b7fc-423e-8906-2993264db803", "2993264db803", time.Now(), time.Now().Add(-(MAX_TIME_SESSION_INACTIVITY - 300) * time.Second)},
+		{"bd8936e1-e863-42dd-90a8-7d845852f26c", "7d845852f26c", time.Now(), time.Now().Add(-(MAX_TIME_SESSION_INACTIVITY + 300) * time.Second)},
+		{"edb5be8b-1d05-445a-aece-623eb9fbc18b", "623eb9fbc18b", time.Now(), time.Now().Add(-(MAX_TIME_SESSION_INACTIVITY + 200) * time.Second)},
 	}
 
 	for _, session := range sessions {
@@ -163,6 +166,31 @@ func TestCheckCredentials(t *testing.T) {
 	}
 }
 
+func TestCleanSessionLogs(t *testing.T) {
+	lc := NewLoginController(DATABASE_TEST, TEMPLATES_PATH)
+
+	tt := []struct {
+		name            string
+		sessionsDeleted int64
+	}{
+		{"Delete all the sessions older than 10 days", 2},
+	}
+
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			nDeleted, err := lc.CleanSessionLogs()
+			if err != nil {
+				t.Errorf("database error cleaning logs")
+			}
+
+			if nDeleted != tc.sessionsDeleted {
+				t.Errorf("error removing old logs, expected %v deletions; got %v", tc.sessionsDeleted, nDeleted)
+			}
+		})
+	}
+
+}
+
 func TestCheckCookie(t *testing.T) {
 	lc := NewLoginController(DATABASE_TEST, TEMPLATES_PATH)
 
@@ -214,8 +242,10 @@ func TestDeleteCookieSession(t *testing.T) {
 	t.Run("cookie check delete", func(t *testing.T) {
 		// Insert session in DB
 		session := model.UserSession{
-			Uuid:     "value",
-			Username: "default",
+			Uuid:      "value",
+			Username:  "default",
+			LoginTime: time.Now(),
+			LastSeen:  time.Now(),
 		}
 
 		_, err := lc.collectionSession.InsertOne(context.Background(), session)

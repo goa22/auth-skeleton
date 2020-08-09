@@ -30,8 +30,7 @@ const (
 	REGEX_PASSWORD = "^[a-zA-Z0-9_-]{6,30}$"
 
 	// Time clean database session for users that do not logout
-	TIMER_CHECK_SESSION_INACTIVITY = 86400  // 1 day
-	MAX_TIME_SESSION_INACTIVITY    = 864000 // 10 day
+	MAX_TIME_SESSION_INACTIVITY = 864000 // 10 day
 
 	// Context time
 	CONTEXT_TIME_DB = 3
@@ -150,7 +149,6 @@ func (lc LoginController) LoginHandler(w http.ResponseWriter, req *http.Request)
 				return
 			} else {
 				loginTplView.Err = err
-				// http.Error(w, "Username and/or password do not match", http.StatusForbidden)
 			}
 
 		}
@@ -198,17 +196,31 @@ func (lc LoginController) UserHandler(w http.ResponseWriter, req *http.Request) 
 
 }
 
+func (lc LoginController) CleanSessionLogs() (int64, error) {
+	timeDiff := time.Now().Add(-MAX_TIME_SESSION_INACTIVITY * time.Second)
+	query := bson.M{"lastSeen": bson.M{"$lt": timeDiff}}
+
+	ctx, cancel := context.WithTimeout(context.Background(), CONTEXT_TIME_DB*time.Second)
+	defer cancel()
+
+	res, err := lc.collectionSession.DeleteMany(ctx, query)
+	return res.DeletedCount, err
+}
+
 // CheckCookie ensure that the cookie session is correct
 func (lc LoginController) CheckCookie(w http.ResponseWriter, req *http.Request) (string, bool) {
 	c, err := req.Cookie(COOKIE_ACCES_PATH)
-	if err != nil {
-		return "", false
-	} else {
+	if err == nil {
 		ctx, cancel := context.WithTimeout(context.Background(), CONTEXT_TIME_DB*time.Second)
 		defer cancel()
 
 		session := model.UserSession{}
-		err = lc.collectionSession.FindOne(ctx, bson.M{"uuid": c.Value, "username": bson.M{"$exists": true}}).Decode(&session)
+
+		// Find one and update lastSeen
+		query := bson.M{"uuid": c.Value, "username": bson.M{"$exists": true}}
+		update := bson.M{"$set": bson.M{"lastSeen": time.Now()}}
+
+		err = lc.collectionSession.FindOneAndUpdate(ctx, query, update).Decode(&session)
 		if err == nil {
 			return session.Username, true
 		}
