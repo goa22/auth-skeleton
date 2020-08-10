@@ -270,7 +270,9 @@ func (lc LoginController) checkCredentials(username string, password string) (bo
 	defer cancel()
 
 	result := model.User{}
-	err := lc.collectionUser.FindOne(ctx, bson.M{"username": username, "password": bson.M{"$exists": true}}).Decode(&result)
+
+	query := bson.M{"username": username, "password": bson.M{"$exists": true}, "emailChecked": true}
+	err := lc.collectionUser.FindOne(ctx, query).Decode(&result)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			err = errors.New("Username or password not valid")
@@ -311,11 +313,13 @@ func (lc LoginController) addNewUser(username, email, password string) error {
 	}
 
 	newUser := model.User{
-		Username:     username,
-		Password:     string(passwordHashed),
-		Email:        email,
-		IsActive:     true,
-		EmailChecked: false,
+		Username: username,
+		Password: string(passwordHashed),
+		Email:    email,
+		IsActive: true,
+		// If want email verification set to false
+		// by default and create a method for confirmation
+		EmailChecked: true,
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), CONTEXT_TIME_DB*time.Second)
