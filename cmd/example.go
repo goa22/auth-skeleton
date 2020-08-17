@@ -3,7 +3,7 @@ package main
 import (
 	"crypto/tls"
 	"fmt"
-	"github.com/auth-skeleton/pkg/controller"
+	"github.com/yfernandezgou/auth-skeleton/pkg/controller"
 	"log"
 	"net/http"
 	"os"

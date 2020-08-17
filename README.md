@@ -40,9 +40,9 @@ In the `UserSession` we can see the unique value `uuid` and the `username`. This
 ![alt text](img/workflow-sessions.png "Logo Title Text 1")
 
 ## Testing 
-You can run the testing functions with 
+You can run the testing functions inside `pkg/controller` with 
 ```
-$ go test pkg/controller/login_test.go 
+$ go test -v login_test.go 
 ```
 ## Usage example 
 In `cmd/example.go` you can find the code above: 
